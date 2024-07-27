@@ -1,0 +1,170 @@
+﻿@inherits LayoutComponentBase
+@inject HttpClient HttpClient
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            @if (string.IsNullOrEmpty(AccessKey))
+            {
+                @if (IsEnteringKey)
+                {
+                    <div class="input-group">
+                        <input type="text" class="form-control" @bind="TempAccessKey" placeholder="Введите ключ доступа" />
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" @onclick="SaveAccessKey">Сохранить</button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <button id="access-key-button" class="btn btn-primary" @onclick="ShowAccessKeyInput">Указать ключ доступа</button>
+                }
+            }
+            else if (IsLoading)
+            {
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+            }
+            else
+            {
+                <span>Баланс запросов: @Attempts</span>
+            }
+        </div>
+
+        <article class="content px-4">
+            <CascadingValue Value="this">
+                @Body
+            </CascadingValue>
+        </article>
+    </main>
+</div>
+
+@if (!string.IsNullOrEmpty(Notification))
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @Notification
+        <button type="button" class="btn-close" @onclick="ClearNotification"></button>
+    </div>
+}
+
+@code {
+    public string AccessKey { get; private set; }
+    public int Attempts { get; private set; }
+    private string TempAccessKey { get; set; }
+    private bool IsEnteringKey { get; set; }
+    private bool IsLoading { get; set; }
+    public string Notification { get; private set; }
+
+    private void ShowAccessKeyInput()
+    {
+        IsEnteringKey = true;
+    }
+
+    private async Task SaveAccessKey()
+    {
+        if (!string.IsNullOrEmpty(TempAccessKey))
+        {
+            IsLoading = true;
+            IsEnteringKey = false;
+            StateHasChanged();
+
+            try
+            {
+                var response = await HttpClient.GetAsync($"http://litparse.somee.com/AccessKey/Attempts?encryptedKey={TempAccessKey}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var attemptsResponse = await response.Content.ReadFromJsonAsync<AttemptsResponse>();
+                    AccessKey = TempAccessKey;
+                    Attempts = attemptsResponse.Attempts;
+                    ShowNotification("Ключ доступа успешно сохранен.");
+                }
+                else
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    ShowNotification($"Ошибка при сохранении ключа: {errorMessage}");
+                    ResetAccessKeyInput();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Произошла ошибка: {ex.Message}");
+                ResetAccessKeyInput();
+            }
+            finally
+            {
+                IsLoading = false;
+                TempAccessKey = null;
+                StateHasChanged();
+            }
+        }
+    }
+
+    public async Task CheckAttempts()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var encodedKey = Uri.EscapeDataString(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(AccessKey)));
+            var response = await HttpClient.GetAsync($"http://litparse.somee.com/AccessKey/Attempts?encryptedKey={TempAccessKey}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var attemptsResponse = await response.Content.ReadFromJsonAsync<AttemptsResponse>();
+                Attempts = attemptsResponse.Attempts;
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowNotification($"Ошибка при проверке баланса: {errorMessage}");
+                ResetAccessKey();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowNotification($"Произошла ошибка: {ex.Message}");
+            ResetAccessKey();
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void ShowNotification(string message)
+    {
+        Notification = message;
+        StateHasChanged();
+    }
+
+    private void ClearNotification()
+    {
+        Notification = null;
+    }
+
+    public void ResetAccessKey()
+    {
+        AccessKey = null;
+        Attempts = 0;
+        ResetAccessKeyInput();
+    }
+
+    private void ResetAccessKeyInput()
+    {
+        IsEnteringKey = false;
+        TempAccessKey = null;
+    }
+
+    public class AttemptsResponse
+    {
+        public int Attempts { get; set; }
+    }
+}

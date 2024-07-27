@@ -1,0 +1,189 @@
+﻿@page "/"
+@using System.Net.Http.Json
+@inject HttpClient HttpClient
+
+<PageTitle>Поиск книг в библиотеках</PageTitle>
+
+<h1>@(IsSearchView ? "Поиск книг в библиотеках" : "Имеется в библиотеках")</h1>
+
+@if (IsSearchView)
+{
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Введите название книги" @bind="SearchQuery" @onkeyup="@EnterPressed" />
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" @onclick="SearchBooks">Найти</button>
+        </div>
+    </div>
+
+    @if (Books != null && Books.Any())
+    {
+        <ul class="list-group">
+            @foreach (var book in Books)
+            {
+                <li class="list-group-item">
+                    <span class="book-type-icon">@GetBookTypeIcon(book.BookType.Name)</span>
+                    <a href="#" @onclick="@(() => GetLibraries(book))">@book.Title</a>
+                    <span class="author">@book.Author.Name</span>
+                </li>
+            }
+        </ul>
+    }
+}
+else
+{
+    <button class="btn btn-secondary mb-3" @onclick="ReturnToSearch">Вернуться к поиску</button>
+
+    @if (SelectedBook != null)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">@SelectedBook.Title</h5>
+                <h6 class="card-subtitle mb-2 text-muted">@SelectedBook.Author.Name</h6>
+                <p class="card-text">Тип: @SelectedBook.BookType.Name</p>
+            </div>
+        </div>
+    }
+
+    @if (Libraries != null && Libraries.Any())
+    {
+        <ul class="list-group">
+            @foreach (var library in Libraries)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@library.Name</span>
+                    @if (!LibraryUrls.ContainsKey(library.LibraryId))
+                    {
+                        <button class="btn btn-sm btn-primary" @onclick="@(() => GetLibraryUrl(library))">Получить ссылку</button>
+                    }
+                    else
+                    {
+                        <a href="@LibraryUrls[library.LibraryId]" target="_blank" class="btn btn-sm btn-link">@LibraryUrls[library.LibraryId]</a>
+                    }
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private string SearchQuery { get; set; }
+    private List<Book> Books { get; set; }
+    private Book SelectedBook { get; set; }
+    private List<Library> Libraries { get; set; }
+    private Dictionary<int, string> LibraryUrls { get; set; } = new Dictionary<int, string>();
+    private bool IsSearchView { get; set; } = true;
+
+    [CascadingParameter]
+    private MainLayout Layout { get; set; }
+
+    private async Task SearchBooks()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            var response = await HttpClient.GetFromJsonAsync<List<Book>>($"http://litparse.somee.com/book?query={Uri.EscapeDataString(SearchQuery)}");
+            Books = response;
+            Libraries = null;
+            LibraryUrls.Clear();
+        }
+    }
+
+    private async Task GetLibraries(Book book)
+    {
+        SelectedBook = book;
+        var response = await HttpClient.GetFromJsonAsync<List<Library>>($"http://litparse.somee.com/Library/WithBook?bookId={book.BookId}");
+        Libraries = response;
+        IsSearchView = false;
+    }
+
+    private void ReturnToSearch()
+    {
+        IsSearchView = true;
+        SelectedBook = null;
+        Libraries = null;
+        LibraryUrls.Clear();
+    }
+
+    private async Task GetLibraryUrl(Library library)
+    {
+        if (string.IsNullOrEmpty(Layout.AccessKey))
+        {
+            Layout.ShowNotification("Для получения ссылки необходимо указать ключ доступа.");
+            return;
+        }
+
+        HttpClient.DefaultRequestHeaders.Clear();
+        HttpClient.DefaultRequestHeaders.Add("X-Access-Key", Layout.AccessKey);
+
+        try
+        {
+            var response = await HttpClient.GetFromJsonAsync<LibraryWithUrl>($"http://litparse.somee.com/Library?libraryId={library.LibraryId}");
+            LibraryUrls[library.LibraryId] = response.Url;
+            await Layout.CheckAttempts();
+        }
+        catch (HttpRequestException e)
+        {
+            if (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Layout.ResetAccessKey();
+                Layout.ShowNotification("Недействительный ключ доступа. Пожалуйста, введите ключ заново.");
+            }
+            else
+            {
+                Layout.ShowNotification($"Ошибка при получении ссылки: {e.Message}");
+            }
+            LibraryUrls.Remove(library.LibraryId);
+        }
+        StateHasChanged();
+    }
+
+    private string GetBookTypeIcon(string bookType) => bookType switch
+    {
+        "pdf" => "📄",
+        "audio" => "🎧",
+        "ebook" => "📚",
+        _ => "📘"
+    };
+
+    private async Task EnterPressed(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await SearchBooks();
+        }
+    }
+
+    public class Book
+    {
+        public int BookId { get; set; }
+        public string Title { get; set; }
+        public string Url { get; set; }
+        public Author Author { get; set; }
+        public BookType BookType { get; set; }
+    }
+
+    public class Author
+    {
+        public int AuthorId { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+    }
+
+    public class BookType
+    {
+        public int BookTypeId { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class Library
+    {
+        public int LibraryId { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class LibraryWithUrl
+    {
+        public int LibraryId { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+    }
+}
