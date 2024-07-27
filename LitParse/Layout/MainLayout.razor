@@ -53,6 +53,8 @@
 }
 
 @code {
+    private const string ApiBaseUrl = "https://litparse.somee.com";
+
     public string AccessKey { get; private set; }
     public int Attempts { get; private set; }
     private string TempAccessKey { get; set; }
@@ -75,7 +77,7 @@
 
             try
             {
-                var response = await HttpClient.GetAsync($"http://litparse.somee.com/AccessKey/Attempts?encryptedKey={TempAccessKey}");
+                var response = await HttpClient.GetAsync($"{ApiBaseUrl}/AccessKey/Attempts?encryptedKey={TempAccessKey}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -112,8 +114,7 @@
 
         try
         {
-            var encodedKey = Uri.EscapeDataString(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(AccessKey)));
-            var response = await HttpClient.GetAsync($"http://litparse.somee.com/AccessKey/Attempts?encryptedKey={TempAccessKey}");
+            var response = await HttpClient.GetAsync($"{ApiBaseUrl}/AccessKey/Attempts?encryptedKey={AccessKey}");
 
             if (response.IsSuccessStatusCode)
             {

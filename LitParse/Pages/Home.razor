@@ -66,6 +66,8 @@ else
 }
 
 @code {
+    private const string ApiBaseUrl = "https://litparse.somee.com";
+
     private string SearchQuery { get; set; }
     private List<Book> Books { get; set; }
     private Book SelectedBook { get; set; }
@@ -80,7 +82,7 @@ else
     {
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
-            var response = await HttpClient.GetFromJsonAsync<List<Book>>($"http://litparse.somee.com/book?query={Uri.EscapeDataString(SearchQuery)}");
+            var response = await HttpClient.GetFromJsonAsync<List<Book>>($"{ApiBaseUrl}/book?query={Uri.EscapeDataString(SearchQuery)}");
             Books = response;
             Libraries = null;
             LibraryUrls.Clear();
@@ -90,7 +92,7 @@ else
     private async Task GetLibraries(Book book)
     {
         SelectedBook = book;
-        var response = await HttpClient.GetFromJsonAsync<List<Library>>($"http://litparse.somee.com/Library/WithBook?bookId={book.BookId}");
+        var response = await HttpClient.GetFromJsonAsync<List<Library>>($"{ApiBaseUrl}/Library/WithBook?bookId={book.BookId}");
         Libraries = response;
         IsSearchView = false;
     }
@@ -116,7 +118,7 @@ else
 
         try
         {
-            var response = await HttpClient.GetFromJsonAsync<LibraryWithUrl>($"http://litparse.somee.com/Library?libraryId={library.LibraryId}");
+            var response = await HttpClient.GetFromJsonAsync<LibraryWithUrl>($"{ApiBaseUrl}/Library?libraryId={library.LibraryId}");
             LibraryUrls[library.LibraryId] = response.Url;
             await Layout.CheckAttempts();
         }
