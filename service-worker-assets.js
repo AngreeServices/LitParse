@@ -33,11 +33,11 @@
       "url": "_framework\/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-0vUXW+ZWsqco69ISqSKooksPkzDHwjhYnRiTezHQNF4=",
+      "hash": "sha256-43W3nMGn\/0sGkg8LgNyT8xGQmY7TR0TTfA6ACmtrDGc=",
       "url": "_framework\/blazor.boot.json"
     },
     {
-      "hash": "sha256-FP\/Bpz9LCkg0CgatUYhzPzH+IH8vXGKY4xi6mLDylxs=",
+      "hash": "sha256-CAI1KcCNttLFDK0CpBUbY6akQdi97JJ1Do8vl1729\/U=",
       "url": "_framework\/LitParse.wasm"
     },
     {
@@ -73,7 +73,7 @@
       "url": "_framework\/Microsoft.Extensions.DependencyInjection.wasm"
     },
     {
-      "hash": "sha256-LcaPEaPNm7pFT9kZyDHfXsV4Z9cGFGu7KFdL3o3UQks=",
+      "hash": "sha256-0X8GwYw0mz8vIKJz\/MLUWgFj\/hjJj5F1sUaUETQLGKA=",
       "url": "_framework\/Microsoft.Extensions.Logging.Abstractions.wasm"
     },
     {
@@ -149,7 +149,7 @@
       "url": "_framework\/System.Runtime.InteropServices.JavaScript.wasm"
     },
     {
-      "hash": "sha256-AnMJHxUa\/BvTyPTqs0MowYSQP5Ug9lNQsUhsJL9OF6g=",
+      "hash": "sha256-RsQW19ogWcTS3l3r3ViTrFx4WZ5RqUEeGLYJq4dpQ8Q=",
       "url": "_framework\/System.Runtime.wasm"
     },
     {
@@ -169,7 +169,7 @@
       "url": "LitParse.styles.css"
     },
     {
-      "hash": "sha256-8XGQUJLugL8nReoIlg5MjIbkdYejyAy99jpZ95TnTKY=",
+      "hash": "sha256-ul+uQa\/ieRQJzvh2Xnwbpwh+wMGOMUArENBWGKWxlI8=",
       "url": "css\/app.css"
     },
     {
@@ -209,5 +209,5 @@
       "url": "sample-data\/weather.json"
     }
   ],
-  "version": "4003cwzW"
+  "version": "1iK1oXvP"
 };
