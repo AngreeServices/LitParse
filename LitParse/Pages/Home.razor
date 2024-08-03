@@ -1,71 +1,90 @@
 ﻿@page "/"
 @using System.Net.Http.Json
 @inject HttpClient HttpClient
+@inject ILogger<Home> Logger
 
 <PageTitle>Поиск книг в библиотеках</PageTitle>
 
-<h1>@(IsSearchView ? "Поиск книг в библиотеках" : "Имеется в библиотеках")</h1>
+<h1>Поиск книг в библиотеках</h1>
 
-@if (IsSearchView)
-{
-    <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="Введите название книги" @bind="SearchQuery" @onkeyup="@EnterPressed" />
-        <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" @onclick="SearchBooks">Найти</button>
-        </div>
+<div class="input-group mb-3">
+    <input type="text" class="form-control" placeholder="Введите название книги" @bind="SearchQuery" @onkeyup="@EnterPressed" />
+    <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="button" @onclick="SearchBooks">Найти</button>
     </div>
+</div>
 
-    @if (Books != null && Books.Any())
-    {
-        <ul class="list-group">
-            @foreach (var book in Books)
-            {
-                <li class="list-group-item">
-                    <span class="book-type-icon">@GetBookTypeIcon(book.BookType.Name)</span>
-                    <a href="#" @onclick="@(() => GetLibraries(book))">@book.Title</a>
-                    <span class="author">@book.Author.Name</span>
-                </li>
-            }
-        </ul>
-    }
-}
-else
+@if (Books != null && Books.Any())
 {
-    <button class="btn btn-secondary mb-3" @onclick="ReturnToSearch">Вернуться к поиску</button>
-
-    @if (SelectedBook != null)
-    {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">@SelectedBook.Title</h5>
-                <h6 class="card-subtitle mb-2 text-muted">@SelectedBook.Author.Name</h6>
-                <p class="card-text">Тип: @SelectedBook.BookType.Name</p>
-            </div>
-        </div>
-    }
-
-    @if (Libraries != null && Libraries.Any())
-    {
-        <ul class="list-group">
-            @foreach (var library in Libraries)
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>@library.Name</span>
-                    @if (!LibraryUrls.ContainsKey(library.LibraryId))
-                    {
-                        <button class="btn btn-sm btn-primary" @onclick="@(() => GetLibraryUrl(library))">Получить ссылку</button>
-                    }
-                    else
-                    {
-                        <a href="@LibraryUrls[library.LibraryId]" target="_blank" class="btn btn-sm btn-link">@LibraryUrls[library.LibraryId]</a>
-                    }
-                </li>
-            }
-        </ul>
-    }
+    <ul class="list-group book-list">
+        @foreach (var book in Books)
+        {
+            <li class="list-group-item book-item @(SelectedBook?.BookId == book.BookId ? "active" : "")">
+                <div class="book-header" @onclick="() => ToggleBookDetails(book)">
+                    <div class="book-image-container">
+                        @if (!string.IsNullOrEmpty(book.ImageSmallUrl))
+                        {
+                            <img src="@(SelectedBook?.BookId == book.BookId ? book.ImageBigUrl : book.ImageSmallUrl)"
+                                 alt="@book.Title"
+                                 class="@(SelectedBook?.BookId == book.BookId ? "book-big-image" : "book-small-image")" />
+                        }
+                        else
+                        {
+                            <div class="@(SelectedBook?.BookId == book.BookId ? "book-big-image-placeholder" : "book-small-image-placeholder")"></div>
+                        }
+                        <span class="book-type-icon">@GetBookTypeIcon(book.BookType.Name)</span>
+                    </div>
+                    <div class="book-info">
+                        <strong class="book-title">@book.Title</strong>
+                        <span class="author">@book.Author.Name</span>
+                    </div>
+                </div>
+                @if (SelectedBook?.BookId == book.BookId)
+                {
+                    <div class="book-details">
+                        @if (IsLoadingLibraries)
+                        {
+                            <div class="text-center my-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                        }
+                        else if (Libraries != null && Libraries.Any())
+                        {
+                            <p class="libraries-message">Имеется в библиотеках:</p>
+                            <ul class="list-group">
+                                @foreach (var library in Libraries)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>@library.Name</span>
+                                        @if (!LibraryUrls.ContainsKey(library.LibraryId))
+                                        {
+                                            <button class="btn btn-sm btn-primary" @onclick="@(() => GetLibraryUrl(library))">Получить ссылку</button>
+                                        }
+                                        else
+                                        {
+                                            <a href="@LibraryUrls[library.LibraryId]" target="_blank" class="btn btn-sm btn-link">@LibraryUrls[library.LibraryId]</a>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="libraries-message">Нет доступных библиотек для этой книги.</p>
+                        }
+                    </div>
+                }
+            </li>
+        }
+    </ul>
 }
 
 @code {
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
+
     private const string ApiBaseUrl = "https://litparse.somee.com";
 
     private string SearchQuery { get; set; }
@@ -73,10 +92,15 @@ else
     private Book SelectedBook { get; set; }
     private List<Library> Libraries { get; set; }
     private Dictionary<int, string> LibraryUrls { get; set; } = new Dictionary<int, string>();
-    private bool IsSearchView { get; set; } = true;
+    private bool IsLoadingLibraries { get; set; }
 
-    [CascadingParameter]
-    private MainLayout Layout { get; set; }
+    protected override void OnInitialized()
+    {
+        if (Layout == null)
+        {
+            Logger.LogWarning("Layout is null in Home component");
+        }
+    }
 
     private async Task SearchBooks()
     {
@@ -84,29 +108,55 @@ else
         {
             var response = await HttpClient.GetFromJsonAsync<List<Book>>($"{ApiBaseUrl}/book?query={Uri.EscapeDataString(SearchQuery)}");
             Books = response;
+            SelectedBook = null;
             Libraries = null;
             LibraryUrls.Clear();
         }
     }
 
-    private async Task GetLibraries(Book book)
+    private async Task ToggleBookDetails(Book book)
     {
-        SelectedBook = book;
-        var response = await HttpClient.GetFromJsonAsync<List<Library>>($"{ApiBaseUrl}/Library/WithBook?bookId={book.BookId}");
-        Libraries = response;
-        IsSearchView = false;
+        if (SelectedBook?.BookId == book.BookId)
+        {
+            SelectedBook = null;
+            Libraries = null;
+        }
+        else
+        {
+            SelectedBook = book;
+            await GetLibraries(book);
+        }
     }
 
-    private void ReturnToSearch()
+    private async Task GetLibraries(Book book)
     {
-        IsSearchView = true;
-        SelectedBook = null;
+        IsLoadingLibraries = true;
         Libraries = null;
-        LibraryUrls.Clear();
+        StateHasChanged();
+
+        try
+        {
+            var response = await HttpClient.GetFromJsonAsync<List<Library>>($"{ApiBaseUrl}/Library/WithBook?bookId={book.BookId}");
+            Libraries = response;
+        }
+        catch (Exception ex)
+        {
+            Layout?.ShowNotification($"Ошибка при загрузке списка библиотек: {ex.Message}");
+        }
+        finally
+        {
+            IsLoadingLibraries = false;
+        }
     }
 
     private async Task GetLibraryUrl(Library library)
     {
+        if (Layout == null)
+        {
+            Logger.LogError("Layout is null when trying to get library URL");
+            return;
+        }
+
         if (string.IsNullOrEmpty(Layout.AccessKey))
         {
             Layout.ShowNotification("Для получения ссылки необходимо указать ключ доступа.");
@@ -154,6 +204,8 @@ else
         }
     }
 
+
+
     public class Book
     {
         public int BookId { get; set; }
@@ -161,6 +213,8 @@ else
         public string Url { get; set; }
         public Author Author { get; set; }
         public BookType BookType { get; set; }
+        public string ImageSmallUrl { get; set; }
+        public string ImageBigUrl { get; set; }
     }
 
     public class Author
