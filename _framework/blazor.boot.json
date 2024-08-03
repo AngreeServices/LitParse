@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "LitParse",
   "resources": {
-    "hash": "sha256-j+wqZTm63lFT/LgPOxT0op7qoyAMZ5Oacdxid881jkA=",
+    "hash": "sha256-3ycKob5sM1qXIvyeJKGY7D0dFHbuBKmePHmq/ZW5Tko=",
     "jsModuleNative": {
       "dotnet.native.8.0.7.pvkr2na9g4.js": "sha256-tFsxPBbhkdn6GKNBKvCRLzrfAHdyM86odYTe0MtrwMk="
     },
@@ -17,7 +17,7 @@
       "icudt_no_CJK.dat": "sha256-L7sV7NEYP37/Qr2FPCePo5cJqRgTXRwGHuwF5Q+0Nfs="
     },
     "assembly": {
-      "LitParse.wasm": "sha256-CAI1KcCNttLFDK0CpBUbY6akQdi97JJ1Do8vl1729/U=",
+      "LitParse.wasm": "sha256-rZ4HTuc/JW9H3ll2QTa5XTZam4Ut/QaeBCV6lTtWmxg=",
       "Microsoft.AspNetCore.Components.wasm": "sha256-8Y4tpPlsZ97LiX1eL9IYXtcdafa1mYtBmfBDnXSc7mc=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-jsxo3rj8KxxKpQejTGenXRSjdfIah0c8FpRkf3gDdFY=",
       "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-cjv0l2XLcfeTcLwHeVQeK+F20CSOw34aaTjOGlrKazc=",
