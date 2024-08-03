@@ -231,6 +231,18 @@ main {
     max-width: 300px;
 }
 
+.list-group-item.active {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    color: #495057;
+    z-index: 0;
+}
+
+.input-group .btn {
+    position: relative;
+    z-index: 0;
+}
+
 @media (min-width: 641px) {
     .page {
         flex-direction: row;
@@ -260,3 +272,5 @@ main {
         overflow-y: auto;
     }
 }
+
+
