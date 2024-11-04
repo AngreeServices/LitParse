@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
 
 <div class="page">
     <div class="sidebar">
@@ -59,6 +61,17 @@
     private bool IsEnteringKey { get; set; }
     private bool IsLoading { get; set; }
     private string Notification { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("key", out var key))
+        {
+            TempAccessKey = key.ToString();
+            await SaveAccessKey();
+        }
+    }
 
     private void ShowAccessKeyInput()
     {
